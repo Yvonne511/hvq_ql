@@ -1,4 +1,4 @@
-name: hvq_ql
+name: hvq
 channels:
   - conda-forge
   - defaults

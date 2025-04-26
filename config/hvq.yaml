@@ -1,0 +1,46 @@
+defaults:
+  - override hydra/launcher: submitit_slurm
+
+ckpt_base_path: /vast/yw4142/checkpoints/hvq_ql/hvq
+seed: 42
+
+hydra:
+  run:
+    dir: ${ckpt_base_path}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ${ckpt_base_path}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    submitit_folder: ${hydra.sweep.dir}/.submitit/%j
+    nodes: 1
+    tasks_per_node: 4
+    cpus_per_task: 6
+    # mem_gb: 256
+    mem_gb: 256
+    gres: "gpu:v100:4"
+    # constraint: "rtx8000"
+    # timeout_min: 10080
+    timeout_min: 2880
+    setup: ["export DEBUGVAR=$(scontrol show hostnames $SLURM_JOB_NODELIST)",
+            export MASTER_ADDR="$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)",
+            "export MASTER_PORT=$(for port in $(shuf -i 30000-65500 -n 20); do if [[ $(netstat -tupln 2>&1 | grep $port | wc -l) -eq 0 ]] ; then echo $port; break; fi; done;)",]
+
+env: pointmaze
+
+# HVQ
+num_classes: 6
+num_stages: 2
+num_layers: 10
+f_maps: 32                 # Hidden dimension of the model
+vqt_input_dim: 64          # Input dimension for the VQ model    
+vqt_lr: 1e-3               # Learning rate for the VQ model
+vq_class_multiplier: 2     # alpha parameter: len(Z) = alpha * len(Q)
+ema_dead_code: 3 # If there are more than 3 unused prototypes, they are removed and init. again with a random embedding
+vqt_epochs: 20
+model_type: "double"
+vqt_commit_weight: 1
+vqt_rec_weight: 0.002
+use_scheduler: False       # # Use scheduler during training for lr
+
+stated_based: True
+save_every_epoch_num: 5
