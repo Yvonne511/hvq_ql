@@ -3,17 +3,12 @@ import torch
 import env.ogbench.ogbench as ogbench
 
 class OgbenchDataset:
-    def __init__(self, dataset, use_terminals=True):
+    def __init__(self, dataset):
         self.trajectories = []
         observations = dataset['observations']
         actions = dataset['actions']
         
-        if use_terminals:
-            ends = dataset['terminals']
-        elif 'timeouts' in dataset:
-            ends = dataset['timeouts']
-        else:
-            raise ValueError("Dataset must contain either 'terminals' or 'timeouts'")
+        ends = dataset['terminals']
         
         terminal_indices = np.where(ends == 1.0)[0]
 
