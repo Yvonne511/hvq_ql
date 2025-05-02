@@ -16,6 +16,7 @@ import torch
 import logging
 from datasets import antmaze, pointmaze, scene
 from models.HVQ.hvq.models.hvq_model import SingleVQModel, DoubleVQModel
+from models.simpleVQ import VQSegmentationModel
 
 ## rl imports
 import jax
@@ -52,27 +53,36 @@ def load_vq_model(hvq_cfg, cfg, device):
     checkpoint = torch.load(checkpoint_path, map_location=device)
 
     # Reconstruct the model
-    if hvq_cfg.model_type == "single":
-        model = SingleVQModel(
-            num_stages=hvq_cfg.num_stages,
-            num_layers=hvq_cfg.num_layers,
-            num_f_maps=hvq_cfg.f_maps,
-            dim=hvq_cfg.vqt_input_dim,
-            num_classes=hvq_cfg.num_classes,
-            latent_dim=hvq_cfg.f_maps,
-            cfg=hvq_cfg,
-        ).to(device)
-    else:
-        model = DoubleVQModel(
-            num_stages=hvq_cfg.num_stages,
-            num_layers=hvq_cfg.num_layers,
-            num_f_maps=hvq_cfg.f_maps,
-            dim=hvq_cfg.vqt_input_dim,
-            num_classes=hvq_cfg.num_classes,
-            latent_dim=hvq_cfg.f_maps,
-            ema_dead_code=hvq_cfg.ema_dead_code,
-            cfg=hvq_cfg,
-        ).to(device)
+    # if hvq_cfg.model_type == "single":
+    #     model = SingleVQModel(
+    #         num_stages=hvq_cfg.num_stages,
+    #         num_layers=hvq_cfg.num_layers,
+    #         num_f_maps=hvq_cfg.f_maps,
+    #         dim=hvq_cfg.vqt_input_dim,
+    #         num_classes=hvq_cfg.num_classes,
+    #         latent_dim=hvq_cfg.f_maps,
+    #         cfg=hvq_cfg,
+    #     ).to(device)
+    # else:
+    #     model = DoubleVQModel(
+    #         num_stages=hvq_cfg.num_stages,
+    #         num_layers=hvq_cfg.num_layers,
+    #         num_f_maps=hvq_cfg.f_maps,
+    #         dim=hvq_cfg.vqt_input_dim,
+    #         num_classes=hvq_cfg.num_classes,
+    #         latent_dim=hvq_cfg.f_maps,
+    #         ema_dead_code=hvq_cfg.ema_dead_code,
+    #         cfg=hvq_cfg,
+    #     ).to(device)
+
+    model = VQSegmentationModel(
+        input_dim=hvq_cfg.vqt_input_dim,
+        hidden_dim=256,
+        latent_dim=128,
+        codebook_size=hvq_cfg.num_classes,
+        num_quantizers=4,
+        cfg=hvq_cfg,
+    ).to(device)
 
     model.load_state_dict(checkpoint['model'])
     logger.info("✅ Model loaded successfully and set to eval mode.")
@@ -93,7 +103,7 @@ def train_rl(cfg, vq_model, train_dset, val_dset, env, device):
             obs_vqvae = traj["obs_vqvae"]
             acts = traj["acts"]
 
-            feats = obs_vqvae.permute(0, 2, 1).to(device)
+            feats = acts.permute(0, 2, 1).to(device)
             mask = torch.ones_like(feats).to(device)
             labels = vq_model.get_labels(feats, mask).squeeze().detach().cpu().numpy()
 

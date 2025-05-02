@@ -90,6 +90,32 @@ def visual_2d(env, model, dset, epoch, cfg):
 
         logger.info(f"Saved grid of trajectories to {grid_path}")
         logger.info(f"Saved overlay of trajectories to {overlay_path}")
+    
+    if cfg.env == "antmaze":
+        # visulize each one of the labelled action
+        task_id = 5
+        for label_id in range(cfg.num_classes):
+            frames = []
+            data = dset[0]  # or a random one
+            obs = data["obs_vqvae"]
+            feats = obs.permute(0, 2, 1).to(device)
+            mask = torch.ones_like(feats).to(device)
+            labels = model.get_labels(feats, mask)\
+                            .squeeze().detach().cpu().numpy()
+            ob, info = env.reset(options=dict(task_id=task_id))
+            num_steps = 100
+            selected_indices = np.where(labels == label_id)[0]
+            selected_actions = obs.squeeze()[selected_indices]
+            for action in selected_actions:
+                action = np.clip(action, -1, 1)
+                ob, _, _, _, info = env.step(action)
+                frame = env.render()
+                frames.append(frame)
+            video_path = os.path.join(save_dir, f"label_{label_id}_action_{epoch}.mp4")
+            clip = ImageSequenceClip(frames, fps=60)
+            clip.write_videofile(video_path, codec="libx264")
+            logger.info(f"Saved video for label {label_id} to {video_path}")
+
 
 def save_video_moviepy(frames, path, fps=10):
     clip = ImageSequenceClip(frames, fps=fps)
@@ -167,6 +193,7 @@ def visual_3d(env, model, dset, epoch, cfg):
 
         step = 0
         obs = []
+        actions = []
         frames = []
         phase = 0
         for _ in range(400):
@@ -245,6 +272,7 @@ def visual_3d(env, model, dset, epoch, cfg):
             action = np.clip(action, -1, 1)
             ob, _, _, _, info = env.step(action)
             obs.append(ob)
+            actions.append(action)
             step += 1
 
             if agent.done:
@@ -294,9 +322,10 @@ def visual_3d(env, model, dset, epoch, cfg):
             frames.append(env.render())
             
         obs = np.array(obs)
+        actions = np.array(actions)
         model.eval()
         with torch.no_grad():
-            obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
+            obs_tensor = torch.tensor(actions, dtype=torch.float32).unsqueeze(0).to(device)
             feats = obs_tensor.permute(0, 2, 1).to(device)
             mask = torch.ones_like(feats).to(device)
             labels = model.get_labels(feats, mask)\

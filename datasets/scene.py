@@ -1,7 +1,9 @@
 import numpy as np
 import torch
-# import env.ogbench.ogbench as ogbench
-import ogbench
+import env.ogbench.ogbench as ogbench
+from scipy.spatial.transform import Rotation as R
+from scipy.fftpack import dct, idct
+import numpy as np
 
 class OgbenchDataset:
     def __init__(self, dataset, use_terminals=True):
@@ -43,8 +45,14 @@ class OgbenchDataset:
             traj_act = actions[start_idx:end_idx + 1]
             obs_tensor = torch.tensor(traj_obs, dtype=torch.float32).unsqueeze(0)
             act_tensor = torch.tensor(traj_act, dtype=torch.float32).unsqueeze(0)
+
+            K = 250
+            coeffs = dct(traj_act, axis=0, norm='ortho')      # (T, D)
+            coeffs[K:, :] = 0                                      # zero out high-freq bins
+            smoothed_obs = idct(coeffs, axis=0, norm='ortho')      # (T, D)
+            obs_vqvae_tensor = torch.tensor(smoothed_obs, dtype=torch.float32).unsqueeze(0)  # (1, T, D)
             self.trajectories.append({
-                "obs_vqvae": obs_tensor,
+                "obs_vqvae": act_tensor,
                 "obs": obs_tensor,
                 "acts": act_tensor
             })

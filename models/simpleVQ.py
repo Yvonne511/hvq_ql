@@ -30,12 +30,14 @@ class VQSegmentationModel(nn.Module):
                       kernel_size=3,
                       padding=get_padding(3)),
             nn.ReLU(),
+            nn.AvgPool1d(kernel_size=11, stride=1, padding=5),
             # → (B, latent_dim, T)
             nn.Conv1d(in_channels=hidden_dim,
                       out_channels=hidden_dim,
                       kernel_size=5,
                       padding=get_padding(5)),
             nn.ReLU(),
+            nn.AvgPool1d(kernel_size=3, stride=1, padding=1),
             nn.Conv1d(in_channels=hidden_dim,
                       out_channels=latent_dim,
                       kernel_size=7,
@@ -120,19 +122,19 @@ class VQSegmentationModel(nn.Module):
         # x_recon = self.decoder(q_z)
         # recon_loss = F.mse_loss(x_recon, x)
         codes_z = codes.permute(0, 2, 1)
-        W = 10
+        W = 50
         B, D, T = codes_z.shape
         recon_loss = 0.0
         count = 0
 
         # permute quantized back to (B, D, T) so decoder conv1d can apply on time-axis
 
-        for t in range(0, T - W, W):
+        for t in range(0, T - 2*W + 1, W):
             # input q: steps [t+W : t+2*W]
             # input x: steps [t : t+W]
             # pred x: steps [t+W : t+2*W]
             # chunk_q = q_z[:, :, t+W : t+2*W]          # (B, Latent D, W)
-            chunk_q = codes_z[:, :, t+W : t+2*W]          # (B, num_quantizers, W)
+            chunk_q = codes_z[:, :, t : t+W]          # (B, num_quantizers, W)
             past_chunk = x[:, :, t : t+W]             # (B, Input D, W)
             d_in = torch.cat([past_chunk, chunk_q], dim=1)  # (B, num_quantizers + Input D, W)
             dec_out = self.decoder(d_in)           # (B, 2, W)

@@ -456,7 +456,7 @@ class HGCDataset(GCDataset):
         if self.config['actor_geom_sample']:
             # Geometric sampling.
             offsets = np.random.geometric(p=1 - self.config['discount'], size=batch_size)  # in [1, inf)
-            high_traj_goal_idxs = np.minimum(self._next_subgoal_idxs(idxs), final_state_idxs)
+            high_traj_goal_idxs = np.minimum(idx + offsets, final_state_idxs)
         else:
             # Uniform sampling.
             distances = np.random.rand(batch_size)  # in [0, 1)
