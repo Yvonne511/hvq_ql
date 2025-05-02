@@ -72,7 +72,7 @@ class OgbenchDataset:
             # 3. DCT
             # K = energy_based_k(traj_act, alpha=0.55)
             # print(f"K = {K}")
-            # K = 230
+            # K = 250
             # coeffs = dct(traj_act, axis=0, norm='ortho')      # (T, D)
             # coeffs[K:, :] = 0                                      # zero out high-freq bins
             # smoothed_obs = idct(coeffs, axis=0, norm='ortho')      # (T, D)

@@ -35,7 +35,7 @@ num_stages: 2
 num_layers: 5
 f_maps: 128                 # Hidden dimension of the model
 vqt_input_dim: 32          # Input dimension for the VQ model    
-vqt_lr: 1e-4               # Learning rate for the VQ model
+vqt_lr: 1e-5               # Learning rate for the VQ model
 vq_class_multiplier: 5     # alpha parameter: len(Z) = alpha * len(Q)
 vq_decay: 0.8
 vq_kmeans: True           
