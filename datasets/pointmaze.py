@@ -19,6 +19,8 @@ class OgbenchDataset:
             obs_tensor = torch.tensor(traj_obs, dtype=torch.float32).unsqueeze(0)
             act_tensor = torch.tensor(traj_act, dtype=torch.float32).unsqueeze(0)
             self.trajectories.append({
+                # "obs_vqvae": obs_tensor,
+                "obs_vqvae": act_tensor,
                 "obs": obs_tensor,
                 "acts": act_tensor,
                 "xy": obs_tensor,

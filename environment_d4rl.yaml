@@ -1,4 +1,4 @@
-name: hvq_ql
+name: hvq_ql_d4rl
 channels:
   - conda-forge
 dependencies:
@@ -67,7 +67,7 @@ dependencies:
       - mujoco==3.3.0
       - networkx==3.2.1
       - numpy==1.24.3
-      - ogbench==1.1.2
+      # - ogbench==1.1.2
       - omegaconf==2.3.0
       - packaging==24.2
       - pillow==11.1.0

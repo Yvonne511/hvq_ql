@@ -38,7 +38,8 @@ class SingleStageDecoder(nn.Module):
 class DilatedResidualLayer(nn.Module):
     def __init__(self, dilation, in_channels, out_channels, kernel_size):
         super(DilatedResidualLayer, self).__init__()
-        padding = int(dilation + dilation * (kernel_size - 3) / 2)
+        # padding = int(dilation + dilation * (kernel_size - 3) / 2)
+        padding = dilation * (kernel_size - 1) // 2
         self.conv_dilated = nn.Conv1d(
             in_channels, out_channels, kernel_size, padding=padding, dilation=dilation
         )
@@ -79,10 +80,8 @@ class SingleStageEncoder(nn.Module):
             
         return out
 
-
-
 class SingleVQModel(nn.Module):
-    def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes, latent_dim):
+    def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes, latent_dim, cfg):
         super(SingleVQModel, self).__init__()
         self.stage1 = SingleStageEncoder(num_layers, num_f_maps, dim, num_classes, 3)
         self.stages_enc = nn.ModuleList([copy.deepcopy(SingleStageEncoder(num_layers, num_f_maps, num_f_maps, num_classes, 3)) for s in range(num_stages-1)])
@@ -92,8 +91,7 @@ class SingleVQModel(nn.Module):
             embedding_dim=latent_dim,
             commitment_cost=1.,
             decay=0.8,
-            # threshold_ema_dead_code=opt.ema_dead_code, #opt_set
-            threshold_ema_dead_code=3,
+            threshold_ema_dead_code=cfg.ema_dead_code,
             kmeans=True,
             cos_sim=True
         )
@@ -165,23 +163,20 @@ def map_tensors(i1, i2):
     return mapping_dict
 
 class DoubleVQModel(nn.Module):
-    def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes, latent_dim, ema_dead_code):
+    def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes, latent_dim, ema_dead_code, cfg):
         super(DoubleVQModel, self).__init__()
         #### Encoder ####
-        self.stage1 = SingleStageEncoder(num_layers, num_f_maps, dim, num_classes, 3)
-        self.stages_enc = nn.ModuleList([copy.deepcopy(SingleStageEncoder(num_layers, num_f_maps, num_f_maps, num_classes, 3)) for s in range(num_stages-1)])
+        self.stage1 = SingleStageEncoder(num_layers, num_f_maps, dim, num_classes, cfg.kernel_size)
+        self.stages_enc = nn.ModuleList([copy.deepcopy(SingleStageEncoder(num_layers, num_f_maps, num_f_maps, num_classes, cfg.kernel_size)) for s in range(num_stages-1)])
         
         #### Vector Quantizers ####
         self.vq = VectorQuantizer(
-            # num_embeddings=num_classes*opt.vq_class_multiplier,  #opt_set
-            num_embeddings=num_classes*2,
+            num_embeddings=num_classes*cfg.vq_class_multiplier,
             embedding_dim=latent_dim,
             commitment_cost=1.,
-            # decay=opt.vq_decay,  #opt_set
-            decay=0.8,
+            decay=cfg.vq_decay,
             threshold_ema_dead_code=ema_dead_code,
-            # kmeans=opt.vq_kmeans,  #opt_set
-            kmeans=True,
+            kmeans=cfg.vq_kmeans,
             cos_sim=True,
             first=True
         )
@@ -190,11 +185,9 @@ class DoubleVQModel(nn.Module):
             num_embeddings=num_classes,
             embedding_dim=latent_dim,
             commitment_cost=1.,
-            # decay=opt.vq_decay,  #opt_set
-            decay=0.8,
+            decay=cfg.vq_decay,
             threshold_ema_dead_code=1,  
-            # kmeans=opt.vq_kmeans,  #opt_set
-            kmeans=True,
+            kmeans=cfg.vq_kmeans,
             cos_sim=True
         )
         
@@ -220,6 +213,12 @@ class DoubleVQModel(nn.Module):
     
     def get_distances_sum(self, x, mask):
         enc, _ = self.encode(x, mask)
+        B, D, T = enc.shape
+        pad_len = (4 - (T % 4)) % 4
+        if pad_len > 0:
+            enc = F.pad(enc, (0, pad_len))
+        enc = F.avg_pool1d(enc, kernel_size=4, stride=4)
+        enc = F.interpolate(enc, size=T, mode="linear", align_corners=False)
         quantized1, i1, _, d1 = self.vq(enc)
         _, i2, _, d2 = self.vq2(quantized1)
         
@@ -248,8 +247,11 @@ class DoubleVQModel(nn.Module):
         enc, output_all = self.encode(x, mask)
 
         # Quantize the embeddings in two steps
-        quantized1, _, loss_commit1, _ = self.vq(enc)
-        quantized, _, loss_commit2, distances = self.vq2(quantized1)
+        quantized1, i1, loss_commit1, _ = self.vq(enc)
+        quantized, i2, loss_commit2, distances = self.vq2(quantized1)
+
+        diffs = i2[:, 1:] - i2[:, :-1]
+        smoothness_loss = torch.mean(torch.abs(diffs.float()))
         
         # Commit loss is the sum of the two losses
         loss_commit = loss_commit1 + loss_commit2
@@ -261,8 +263,8 @@ class DoubleVQModel(nn.Module):
         out = self.conv_out(out) * mask[:,0:1,:]
 
         if return_enc:
-            return out, output_all, loss_commit, F.softmax(distances, dim=2), enc
-        return out, output_all, loss_commit, F.softmax(distances, dim=2)
+            return out, output_all, loss_commit, F.softmax(distances, dim=2), enc, smoothness_loss
+        return out, output_all, loss_commit, F.softmax(distances, dim=2), smoothness_loss
       
 
 # class TripleVQModel(nn.Module):

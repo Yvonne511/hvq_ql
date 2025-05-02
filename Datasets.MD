@@ -36,7 +36,7 @@ visual-antmaze-teleport-explore-v0
 
 # Scene
 ## State-based
-scene-play-v0
+scene-play-v0 ←
 scene-noisy-v0
 ## Visual-based
 visual-scene-play-v0

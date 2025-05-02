@@ -14,7 +14,7 @@ import hydra
 from omegaconf import OmegaConf
 import torch
 import logging
-from datasets import antmaze, pointmaze, scene, franka_kitchen
+from datasets import antmaze, pointmaze, scene
 from models.HVQ.hvq.models.hvq_model import SingleVQModel, DoubleVQModel
 
 ## rl imports
@@ -59,7 +59,8 @@ def load_vq_model(hvq_cfg, cfg, device):
             num_f_maps=hvq_cfg.f_maps,
             dim=hvq_cfg.vqt_input_dim,
             num_classes=hvq_cfg.num_classes,
-            latent_dim=hvq_cfg.f_maps
+            latent_dim=hvq_cfg.f_maps,
+            cfg=hvq_cfg,
         ).to(device)
     else:
         model = DoubleVQModel(
@@ -69,7 +70,8 @@ def load_vq_model(hvq_cfg, cfg, device):
             dim=hvq_cfg.vqt_input_dim,
             num_classes=hvq_cfg.num_classes,
             latent_dim=hvq_cfg.f_maps,
-            ema_dead_code=hvq_cfg.ema_dead_code
+            ema_dead_code=hvq_cfg.ema_dead_code,
+            cfg=hvq_cfg,
         ).to(device)
 
     model.load_state_dict(checkpoint['model'])
@@ -88,9 +90,10 @@ def train_rl(cfg, vq_model, train_dset, val_dset, env, device):
         for idx in tqdm(range(len(dset)), desc=desc):
             traj = dset[idx]
             obs = traj["obs"]
+            obs_vqvae = traj["obs_vqvae"]
             acts = traj["acts"]
 
-            feats = obs.permute(0, 2, 1).to(device)
+            feats = obs_vqvae.permute(0, 2, 1).to(device)
             mask = torch.ones_like(feats).to(device)
             labels = vq_model.get_labels(feats, mask).squeeze().detach().cpu().numpy()
 
@@ -122,7 +125,10 @@ def train_rl(cfg, vq_model, train_dset, val_dset, env, device):
     # train a hierarchical RL agent using those segments
 
     exp_name = datetime.now().strftime("%Y%m%d_%H%M%S")
-    setup_wandb(project='OGBench', group=cfg.run_group, name=exp_name, cfg_dict=OmegaConf.to_container(cfg, resolve=True))
+    # exp_name = datetime.now().strftime("%Y%m%d_%H%M%S") + "_pointmaze_baseline"
+    # exp_name = datetime.now().strftime("%Y%m%d_%H%M%S") + "_antmaze_baseline"
+    exp_name = datetime.now().strftime("%Y%m%d_%H%M%S") + "_scene_baseline"
+    setup_wandb(project='hvq_ql', group=cfg.run_group, name=exp_name, cfg_dict=OmegaConf.to_container(cfg, resolve=True))
 
     # train_dataset, val_dataset = None, None
     dataset_class = {
@@ -226,12 +232,12 @@ def main(cfg: OmegaConf):
         "pointmaze": pointmaze.load_dataset_and_env,
         "antmaze": antmaze.load_dataset_and_env,
         "scene": scene.load_dataset_and_env,
-        "franka_kitchen": franka_kitchen.load_dataset_and_env,
+        # "franka_kitchen": franka_kitchen.load_dataset_and_env,
     }
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_dataset, val_dataset, env = DATASET_LOADERS[cfg.env](cfg)
-    cfg.vqt_input_dim = train_dataset[0]["obs"].shape[-1]
+    cfg.vqt_input_dim = train_dataset[0]["obs_vqvae"].shape[-1]
 
     hvq_cfg = OmegaConf.load(os.path.join(cfg.model_path, "hvq.yaml"))
     vq_model = load_vq_model(hvq_cfg, cfg, device)
