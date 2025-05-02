@@ -167,6 +167,7 @@ def visual_3d(env, model, dset, epoch, cfg):
 
         step = 0
         obs = []
+        acts = []
         frames = []
         phase = 0
         for _ in range(400):
@@ -244,6 +245,7 @@ def visual_3d(env, model, dset, epoch, cfg):
             action = np.array(action)
             action = np.clip(action, -1, 1)
             ob, _, _, _, info = env.step(action)
+            acts.append(action)
             obs.append(ob)
             step += 1
 
@@ -294,10 +296,12 @@ def visual_3d(env, model, dset, epoch, cfg):
             frames.append(env.render())
             
         obs = np.array(obs)
+        acts = np.array(acts)
         model.eval()
         with torch.no_grad():
-            obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
-            feats = obs_tensor.permute(0, 2, 1).to(device)
+            # obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
+            obs_vqvae = torch.tensor(acts, dtype=torch.float32).unsqueeze(0).to(device)
+            feats = obs_vqvae.permute(0, 2, 1).to(device)
             mask = torch.ones_like(feats).to(device)
             labels = model.get_labels(feats, mask)\
                         .squeeze().detach().cpu().numpy()

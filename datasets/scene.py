@@ -37,6 +37,11 @@ class OgbenchDataset:
         # - window_pos (1,)          # Window slide position (scaled)
         # - window_vel (1,)          # Window slide velocity
 
+        # Action
+        # - 3-D relative end-effector position (x, y, z).
+        # - 1-D relative end-effector yaw.
+        # - 1-D relative gripper opening.
+
         start_idx = 0
         for traj_id, end_idx in enumerate(terminal_indices):
             traj_obs = observations[start_idx:end_idx + 1]
@@ -44,7 +49,7 @@ class OgbenchDataset:
             obs_tensor = torch.tensor(traj_obs, dtype=torch.float32).unsqueeze(0)
             act_tensor = torch.tensor(traj_act, dtype=torch.float32).unsqueeze(0)
             self.trajectories.append({
-                "obs_vqvae": obs_tensor,
+                "obs_vqvae": act_tensor,
                 "obs": obs_tensor,
                 "acts": act_tensor
             })

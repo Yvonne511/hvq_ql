@@ -1,9 +1,12 @@
 import numpy as np
 import torch
-import env.ogbench.ogbench as ogbench
+# import env.ogbench.ogbench as ogbench
+import ogbench
 from scipy.spatial.transform import Rotation as R
 from scipy.fftpack import dct, idct
 import numpy as np
+from moviepy.editor import ImageSequenceClip
+import os
 
 def energy_based_k(traj_act: np.ndarray, alpha: float = 0.90):
     """
@@ -101,4 +104,42 @@ def load_dataset_and_env(cfg):
 
     return train_data, val_data, env
 
+def visualize_trajectory():
+
+    dataset_name = "antmaze-medium-navigate-v0"
+    env, train_dataset, val_dataset = ogbench.make_env_and_datasets(dataset_name)
+
+    acts = val_dataset['actions']
+    all_runs = []
+    num_repeats = 5
+    task_id = 1
+    num_steps = 80
+
+    os.makedirs("videos", exist_ok=True)
+
+    # Run and record frames
+    for repeat in range(num_repeats):
+        ob, info = env.reset(options=dict(task_id=task_id))
+        frames = []
+
+        for i in range(num_steps):
+            action = acts[i]
+            ob, _, _, _, info = env.step(action)
+            frame = env.render()
+            frames.append(frame)
+
+        all_runs.append(frames)
+
+    # Check if all runs are identical
+    for i in range(1, num_repeats):
+        for t in range(num_steps):
+            if not np.array_equal(all_runs[0][t], all_runs[i][t]):
+                print(f"Difference found at run {i}, timestep {t}")
+
+    print("All 5 rollouts are identical.")
+
+
+if __name__ == "__main__":
+    visualize_trajectory()
+    
 

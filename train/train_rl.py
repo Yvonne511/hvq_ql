@@ -16,6 +16,7 @@ import torch
 import logging
 from datasets import antmaze, pointmaze, scene
 from models.HVQ.hvq.models.hvq_model import SingleVQModel, DoubleVQModel
+from models.simpleVQ import VQSegmentationModel
 
 ## rl imports
 import jax
@@ -44,35 +45,44 @@ def set_seed(seed):
 
 def load_vq_model(hvq_cfg, cfg, device):
     checkpoint_path = os.path.join(
-        cfg.model_path, "checkpoints", f"vq_model_{hvq_cfg.env}_{hvq_cfg.model_type}_epoch_latest.pth") if "model_path" in cfg and cfg.model_path else os.path.join(
-        os.getcwd(), "checkpoints", f"vq_model_{hvq_cfg.env}_{hvq_cfg.model_type}_epoch_latest.pth")
+        cfg.model_path, "checkpoints", f"vq_model_{hvq_cfg.env}_{hvq_cfg.model_type}_epoch_{cfg.model_epoch}.pth") if "model_path" in cfg and cfg.model_path else os.path.join(
+        os.getcwd(), "checkpoints", f"vq_model_{hvq_cfg.env}_{hvq_cfg.model_type}_epoch_{cfg.model_epoch}.pth")
     assert os.path.exists(checkpoint_path), f"Checkpoint not found: {checkpoint_path}"
 
     logger.info(f"📦 Loading VQ model from: {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path, map_location=device)
 
     # Reconstruct the model
-    if hvq_cfg.model_type == "single":
-        model = SingleVQModel(
-            num_stages=hvq_cfg.num_stages,
-            num_layers=hvq_cfg.num_layers,
-            num_f_maps=hvq_cfg.f_maps,
-            dim=hvq_cfg.vqt_input_dim,
-            num_classes=hvq_cfg.num_classes,
-            latent_dim=hvq_cfg.f_maps,
-            cfg=hvq_cfg,
-        ).to(device)
-    else:
-        model = DoubleVQModel(
-            num_stages=hvq_cfg.num_stages,
-            num_layers=hvq_cfg.num_layers,
-            num_f_maps=hvq_cfg.f_maps,
-            dim=hvq_cfg.vqt_input_dim,
-            num_classes=hvq_cfg.num_classes,
-            latent_dim=hvq_cfg.f_maps,
-            ema_dead_code=hvq_cfg.ema_dead_code,
-            cfg=hvq_cfg,
-        ).to(device)
+    # if hvq_cfg.model_type == "single":
+    #     model = SingleVQModel(
+    #         num_stages=hvq_cfg.num_stages,
+    #         num_layers=hvq_cfg.num_layers,
+    #         num_f_maps=hvq_cfg.f_maps,
+    #         dim=hvq_cfg.vqt_input_dim,
+    #         num_classes=hvq_cfg.num_classes,
+    #         latent_dim=hvq_cfg.f_maps,
+    #         cfg=hvq_cfg,
+    #     ).to(device)
+    # else:
+    #     model = DoubleVQModel(
+    #         num_stages=hvq_cfg.num_stages,
+    #         num_layers=hvq_cfg.num_layers,
+    #         num_f_maps=hvq_cfg.f_maps,
+    #         dim=hvq_cfg.vqt_input_dim,
+    #         num_classes=hvq_cfg.num_classes,
+    #         latent_dim=hvq_cfg.f_maps,
+    #         ema_dead_code=hvq_cfg.ema_dead_code,
+    #         cfg=hvq_cfg,
+    #     ).to(device)
+    model = VQSegmentationModel(
+        input_dim=hvq_cfg.vqt_input_dim,
+        hidden_dim=256,
+        latent_dim=128,
+        codebook_size=hvq_cfg.num_classes,
+        num_quantizers=4,
+        cfg=hvq_cfg,
+        device=device,
+    ).to(device)
 
     model.load_state_dict(checkpoint['model'])
     logger.info("✅ Model loaded successfully and set to eval mode.")
@@ -124,10 +134,10 @@ def train_rl(cfg, vq_model, train_dset, val_dset, env, device):
     val_dataset = label_dataset(val_dset, desc="Labeling Val w. VQ")
     # train a hierarchical RL agent using those segments
 
-    exp_name = datetime.now().strftime("%Y%m%d_%H%M%S")
+    exp_name = datetime.now().strftime("%Y%m%d_%H%M%S") + f"_{cfg.env}"
     # exp_name = datetime.now().strftime("%Y%m%d_%H%M%S") + "_pointmaze_baseline"
     # exp_name = datetime.now().strftime("%Y%m%d_%H%M%S") + "_antmaze_baseline"
-    exp_name = datetime.now().strftime("%Y%m%d_%H%M%S") + "_scene_baseline"
+    # exp_name = datetime.now().strftime("%Y%m%d_%H%M%S") + "_scene_baseline"
     setup_wandb(project='hvq_ql', group=cfg.run_group, name=exp_name, cfg_dict=OmegaConf.to_container(cfg, resolve=True))
 
     # train_dataset, val_dataset = None, None
