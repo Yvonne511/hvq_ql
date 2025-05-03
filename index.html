@@ -303,7 +303,13 @@
             <div class="content">
               <h4 class="title is-5">Analysis</h4>
               <p>
-                In PointMaze, our model segments directional movement like "left", "right", and "goal approach" without supervision. Compared to the baseline, the actor loss is lower and more stable, and advantage estimates grow steadily. The final trajectory video shows clean subgoal transitions aligned with spatial bottlenecks.
+                In PointMaze, model segments directional movement like "left", "right", and "goal approach" without supervision.
+                Compared to the baseline, the high actor loss is lower while the low actor loss is higher. 
+                The final trajectory video shows the performance of hierarchical policy for 5 tasks.
+                In general, the overall performance is slightly better than the baseline (red line is baseline).
+                Especially for task 3, mutiple rollout has shown better results using learned subgoals rather than fixed horizon subgoals.
+                One potential explanation is that HIQL uses 25 as subgoal horizon, which is about the steps task 3 needed to reach its goal.
+                So it is lightly that the learned subgoal provide a intermediate step for task 3 while HIQL did not.
               </p>
             </div>
           </div>
