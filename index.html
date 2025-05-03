@@ -223,26 +223,95 @@
     </section>
 
     <!-- Row 2 -->
-    <div class="columns is-centered">
-      <div class="column is-one-third has-text-centered">
-        <figure class="image">
-          <img src="static/images/pointmaze/overall.png" alt="Evaluation metric" style="max-width: 100%; height: auto;">
-          <figcaption>Improved segmentation purity over baselines using HVQ.</figcaption>
-        </figure>
+    <section class="section">
+      <div class="container is-max-desktop">
+        <h2 class="title is-3 has-text-centered">PointMaze</h2>
+    
+        <div class="columns is-variable is-6">
+        
+          <!-- LEFT: 3x3 Graph Grid (3/5 width) -->
+          <div class="column is-three-fifths">
+            <div class="columns is-multiline is-mobile">
+              <!-- 3 -->
+              <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/value_loss.png" alt="Value Loss">
+                  <figcaption>Value Loss</figcaption>
+                </figure>
+              </div>
+              <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/high_actor_loss.png" alt="High Actor Loss">
+                  <figcaption>High Actor Loss</figcaption>
+                </figure>
+              </div>
+              <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/low_actor_loss.png" alt="Low Actor Loss">
+                  <figcaption>Low Actor Loss</figcaption>
+                </figure>
+              </div>
+              <!-- 3 -->
+              <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/task1.png" alt="Task 1">
+                  <figcaption>Task 1 Success Rate</figcaption>
+                </figure>
+              </div>
+              <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/task2.png" alt="Task 2">
+                  <figcaption>Task 2 Success Rate</figcaption>
+                </figure>
+              </div>
+              <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/task3.png" alt="Task 3">
+                  <figcaption>Task 3 Success Rate</figcaption>
+                </figure>
+              </div>
+               <!-- 3 -->
+               <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/task4.png" alt="Task 4">
+                  <figcaption>Task 4 Success Rate</figcaption>
+                </figure>
+              </div>
+              <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/task5.png" alt="Task 5">
+                  <figcaption>Task 5 Success Rate</figcaption>
+                </figure>
+              </div>
+              <div class="column is-one-third has-text-centered">
+                <figure class="image is-300x300">
+                  <img src="static/images/pointmaze/overall.png" alt="Overall">
+                  <figcaption>Overall Success Rate</figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
+    
+          <!-- RIGHT: Video + Analysis (2/5 width) -->
+          <div class="column is-two-fifths">
+            <div class="has-text-centered" style="margin-bottom: 1rem;">
+              <video controls style="width: 100%; height: auto;">
+                <source src="static/video/pointmaze.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+              <p class="has-text-centered">PointMaze Policy Rollout</p>
+            </div>
+            <div class="content">
+              <h4 class="title is-5">Analysis</h4>
+              <p>
+                In PointMaze, our model segments directional movement like "left", "right", and "goal approach" without supervision. Compared to the baseline, the actor loss is lower and more stable, and advantage estimates grow steadily. The final trajectory video shows clean subgoal transitions aligned with spatial bottlenecks.
+              </p>
+            </div>
+          </div>
+    
+        </div>
       </div>
-      <div class="column is-one-third has-text-centered">
-        <figure class="image">
-          <img src="static/images/pointmaze/high_actor_loss.png" alt="Skill recovery" style="max-width: 100%; height: auto;">
-          <figcaption>Model has lower high actor loss</figcaption>
-        </figure>
-      </div>
-      <div class="column is-one-third has-text-centered">
-        <figure class="image">
-          <img src="static/images/pointmaze/low_actor_loss.png" alt="Generalization example" style="max-width: 100%; height: auto;">
-          <figcaption>Model is worse off at lower actor loss</figcaption>
-        </figure>
-      </div>
-    </div>
+    </section>
 
   </div>
 </section>
