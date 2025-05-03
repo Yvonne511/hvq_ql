@@ -184,33 +184,35 @@
     <!--Video Row-->
     <section class="section">
       <div class="container is-max-desktop">
-        <div class="columns">
-        
-          <!-- Left column with 2 videos stacked -->
-          <div class="column is-half">
-            <div class="video-container" style="margin-bottom: 1.5rem;">
+        <div class="columns is-centered">
+    
+          <!-- Column 1: Video 1 -->
+          <div class="column is-one-third has-text-centered">
+            <div class="video-container">
               <video controls style="width: 100%; height: auto;">
                 <source src="static/video/task4_put_in_drawer_8.mp4" type="video/mp4">
                 Your browser does not support the video tag.
               </video>
-              <p class="has-text-centered">Scene action segmentation</p>
+              <p class="has-text-centered">Put-in-drawer: distinct subgoals of reach, pull, and retract emerge.</p>
             </div>
+          </div>
+    
+          <!-- Column 2: Video 2 -->
+          <div class="column is-one-third has-text-centered">
             <div class="video-container">
               <video controls style="width: 100%; height: auto;">
                 <source src="static/video/task5_rearrange_hard_8.mp4" type="video/mp4">
                 Your browser does not support the video tag.
               </video>
-              <p class="has-text-centered">Scene action segmentation</p>
+              <p class="has-text-centered">Rearrangement: segments correspond to key interactions with objects.</p>
             </div>
           </div>
     
-          <!-- Right column with text -->
-          <div class="column is-half">
+          <!-- Column 3: Text Analysis -->
+          <div class="column is-one-third">
             <div class="content">
-              <h3 class="title is-4">Experiment Analysis</h3>
-              <p>
-                These videos showcase action segmentation in more complex manipulation environments. The left video demonstrates subgoal discovery in task with push button, open draw, pick up block and open window.
-              </p>
+              <h3 class="title is-5">Scene Segmentation Analysis</h3>
+              <p>These videos showcase action segmentation in more complex manipulation environments. The left video demonstrates subgoal discovery in task with push button, open draw, pick up block and open window.</p>
               <p>
                 Label 0:
                 Label 1:
@@ -223,7 +225,6 @@
         </div>
       </div>
     </section>
-    
 
     <!-- Row 2 -->
     <div class="columns is-centered">
