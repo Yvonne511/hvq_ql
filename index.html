@@ -155,7 +155,82 @@
   </div>
 </section>
 
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Experiments & Results</h2>
 
+    <!-- Row 1 -->
+    <div class="columns is-centered">
+      <div class="column is-one-third has-text-centered">
+        <figure class="image">
+          <img src="static/images/pointmaze_segmentation.png" alt="AntMaze segmentation example" style="max-width: 100%; height: auto;">
+          <figcaption>Segmented trajectories on PointMaze: distinct subgoals up down left right emerge.</figcaption>
+        </figure>
+      </div>
+      <div class="column is-one-third has-text-centered">
+        <figure class="image">
+          <img src="static/images/antmaze_segmentation.png" alt="PointMaze visualization" style="max-width: 100%; height: auto;">
+          <figcaption>AntMaze latent codes reflect turning points and corner navigation.</figcaption>
+        </figure>
+      </div>
+      <div class="column is-one-third has-text-centered">
+        <figure class="image">
+          <img src="static/images/antmaze_before.png" alt="Scene latent bins" style="max-width: 100%; height: auto;">
+          <figcaption>AntMaze segmentation before chunk action data: capture fine-grained forward, left, right motion.</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <!--Video Row-->
+    <section class="section">
+      <div class="container is-max-desktop">
+        <div class="columns">
+          <div class="column is-half">
+            <div class="video-container">
+              <video controls style="width: 100%; height: auto;">
+                <source src="static/video/task4_put_in_drawer_8.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+              <p class="has-text-centered">Scene segmentation</p>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="video-container">
+              <video controls style="width: 100%; height: auto;">
+                <source src="static/videos/task5_put_in_drawer_8.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+              <p class="has-text-centered">Scene</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Row 2 -->
+    <div class="columns is-centered">
+      <div class="column is-one-third has-text-centered">
+        <figure class="image">
+          <img src="static/images/result4.png" alt="Evaluation metric" style="max-width: 100%; height: auto;">
+          <figcaption>Improved segmentation purity over baselines using HVQ.</figcaption>
+        </figure>
+      </div>
+      <div class="column is-one-third has-text-centered">
+        <figure class="image">
+          <img src="static/images/result5.png" alt="Skill recovery" style="max-width: 100%; height: auto;">
+          <figcaption>Recovered skill primitives match ground truth behavior stages.</figcaption>
+        </figure>
+      </div>
+      <div class="column is-one-third has-text-centered">
+        <figure class="image">
+          <img src="static/images/result6.png" alt="Generalization example" style="max-width: 100%; height: auto;">
+          <figcaption>Model generalizes to unseen task configurations.</figcaption>
+        </figure>
+      </div>
+    </div>
+
+  </div>
+</section>
 
   <footer class="footer">
   <div class="container">
