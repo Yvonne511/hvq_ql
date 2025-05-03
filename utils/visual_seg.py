@@ -20,6 +20,20 @@ import cv2
 
 logger = logging.getLogger(__name__)
 
+def get_label_colors(num_classes, scale=255):
+    """Returns a dict mapping class index → RGB tuple of ints (for OpenCV & Matplotlib)"""
+    cmap = plt.get_cmap("tab10")
+    colors_rgb = {}
+    colors_float = {}
+
+    for i in range(num_classes):
+        rgb_float = np.array(cmap(i)[:3])  # (R, G, B) in [0, 1]
+        rgb_int = tuple((rgb_float * scale).astype(int))  # (R, G, B) in [0, 255]
+        colors_rgb[i] = rgb_int
+        colors_float[i] = rgb_float
+
+    return colors_rgb, colors_float
+
 def visual_2d(env, model, dset, epoch, cfg):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     save_dir = "segmentation_plots"
@@ -121,16 +135,16 @@ def save_video_moviepy(frames, path, fps=10):
     clip = ImageSequenceClip(frames, fps=fps)
     clip.write_videofile(path, codec='libx264')
 
-def add_labels_to_frames(frames, labels, font_scale=0.6, font_thickness=2):
+def add_labels_to_frames(frames, labels, label_colors, font_scale=0.6, font_thickness=2):
     color_map = plt.get_cmap('tab10')
     labeled_frames = []
 
     for i, frame in enumerate(frames):
-        label = labels[i]
+        label = int(labels[i])
         frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
         # Label color and text
-        color = (np.array(color_map(label)[:3]) * 255).astype(np.uint8).tolist()
+        color = tuple(int(c) for c in label_colors[label])
         text = f"Label: {label}"
 
         # Draw filled rectangle for better visibility
@@ -146,7 +160,7 @@ def add_labels_to_frames(frames, labels, font_scale=0.6, font_thickness=2):
 
     return labeled_frames
 
-def save_label_timeline(labels, save_path, title="Label Timeline"):
+def save_label_timeline(labels, save_path, label_colors, title="Label Timeline"):
     """
     Save a label timeline image where each timestep is a colored segment.
     
@@ -155,12 +169,19 @@ def save_label_timeline(labels, save_path, title="Label Timeline"):
         save_path (str): path to save the timeline image.
         title (str): title for the plot.
     """
-    plt.figure(figsize=(10, 1.5))
-    labels = np.array(labels)[None, :]  # shape (1, T) for imshow
-    plt.imshow(labels, aspect='auto', cmap='tab10', interpolation='nearest')
+    T = len(labels)
+    img = np.zeros((20, T, 3), dtype=np.uint8)
+
+    for t, label in enumerate(labels):
+        rgb = label_colors[int(label)]
+        if isinstance(rgb[0], float):  # if using float RGB (e.g., from cmap)
+            rgb = (np.array(rgb) * 255).astype(np.uint8)
+        img[:, t, :] = rgb
+
+    plt.figure(figsize=(10, 1))
+    plt.imshow(img)
     plt.title(title, fontsize=10)
-    plt.xticks([])
-    plt.yticks([])
+    plt.axis("off")
     plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
@@ -323,16 +344,30 @@ def visual_3d(env, model, dset, epoch, cfg):
             
         obs = np.array(obs)
         actions = np.array(actions)
+        T_orig = actions.shape[0]
+        action_dim = actions.shape[1]
+        T_target = 1000
+
+        # Pad actions to 1000 using empty action
+        if T_orig < T_target:
+            repeat_factor = (T_target + T_orig - 1) // T_orig  # ceiling division
+            actions_repeated = np.tile(actions, (repeat_factor, 1))
+            actions_padded = actions_repeated[:T_target]
+        else:
+            actions_padded = actions[:T_target]
         model.eval()
         with torch.no_grad():
-            obs_tensor = torch.tensor(actions, dtype=torch.float32).unsqueeze(0).to(device)
-            feats = obs_tensor.permute(0, 2, 1).to(device)
+            act_tensor = torch.tensor(actions_padded, dtype=torch.float32).unsqueeze(0).to(device)
+            feats = act_tensor.permute(0, 2, 1).to(device)
             mask = torch.ones_like(feats).to(device)
             labels = model.get_labels(feats, mask)\
                         .squeeze().detach().cpu().numpy()
-        frames = frames[:len(obs)]
-        frames_with_labels = add_labels_to_frames(frames, labels)
+        frames = frames[:len(actions)]
+        num_classes = cfg.num_classes
+        labels = labels[:len(actions)]
+        label_colors_rgb, label_colors_float = get_label_colors(num_classes)
+        frames_with_labels = add_labels_to_frames(frames, labels, label_colors_rgb)
         label_timeline_path = os.path.join(save_dir, f"label_timeline_{task_name}_{epoch}.png")
-        save_label_timeline(labels, label_timeline_path, title=f"Label Timeline for {task_name}")
-        save_video_moviepy(frames_with_labels, f'segmentation_plots/{task_name}_{epoch}.mp4')
+        save_label_timeline(labels, label_timeline_path, label_colors_float, title=f"Label Timeline for {task_name}")
+        save_video_moviepy(frames_with_labels, f'{save_dir}/{task_name}_{epoch}.mp4')
 

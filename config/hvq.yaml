@@ -49,3 +49,4 @@ use_scheduler: False       # # Use scheduler during training for lr
 
 stated_based: True
 save_every_epoch_num: 5
+chunk_size: 10

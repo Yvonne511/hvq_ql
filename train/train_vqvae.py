@@ -44,6 +44,7 @@ def train_vq(cfg, dataset, val_data, env, device):
         latent_dim=128,
         codebook_size=cfg.num_classes,
         num_quantizers=4,
+        chunk_size=cfg.chunk_size,
         cfg=cfg,
     ).to(device)
 
